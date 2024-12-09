@@ -1,21 +1,35 @@
+"""
+813bet API - Interface não oficial para a plataforma 813bet
+Permite acesso a dados de Doubles e Crashes de forma automatizada.
+
+Author: 813bet API Team
+Version: 0.0.1
+License: MIT
+"""
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-URL_BASE = "https://www.onebra.com"
-URL_API = "https://api.onebra.com"
+# Configurações da API
+URL_BASE = "https://www.k813bet.com"
+URL_API = "https://api.api813bet.com"
 VERSION_API = "0.0.1-professional"
 
+# Configuração de retry para requisições com falha
 retry_strategy = Retry(
-    total=3,
-    backoff_factor=1,
-    status_forcelist=[429, 500, 502, 503, 504, 104],
-    allowed_methods=frozenset(["HEAD", "POST", "PUT", "GET", "OPTIONS"])
+    total=3,  # número total de tentativas
+    backoff_factor=1,  # tempo entre tentativas
+    status_forcelist=[429, 500, 502, 503, 504, 104]  # códigos HTTP para retry
 )
 adapter = HTTPAdapter(max_retries=retry_strategy)
 
 
 class Browser(object):
+    """
+    Classe base para gerenciar requisições HTTP.
+    Implementa retry automático e headers personalizados.
+    """
 
     def __init__(self):
         self.response = None
@@ -23,6 +37,7 @@ class Browser(object):
         self.session = requests.Session()
 
     def set_headers(self, headers=None):
+        """Define headers padrão e permite headers customizados"""
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, como Gecko) "
                           "Chrome/87.0.4280.88 Safari/537.36"
@@ -32,18 +47,42 @@ class Browser(object):
                 self.headers[key] = value
 
     def get_headers(self):
+        """Retorna headers atuais"""
         return self.headers
 
     def send_request(self, method, url, **kwargs):
+        """
+        Envia requisição HTTP com retry automático
+        
+        Args:
+            method: Método HTTP (GET, POST, etc)
+            url: URL do endpoint
+            **kwargs: Argumentos adicionais para a requisição
+            
+        Returns:
+            Response object
+        """
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
 
         return self.session.request(method, url, **kwargs)
 
 
-class OnebraAPI(Browser):
+class Bet813API(Browser):
+    """
+    API principal para interação com a plataforma 813bet.
+    Implementa métodos para autenticação e consulta de dados.
+    """
 
     def __init__(self, username=None, password=None, token=None):
+        """
+        Inicializa a API
+        
+        Args:
+            username: Email/usuário para login
+            password: Senha para login
+            token: Token de autenticação (opcional)
+        """
         super().__init__()
         self.proxies = None
         self.token = token if token else "None"
@@ -54,6 +93,12 @@ class OnebraAPI(Browser):
         self.headers = self.get_headers()
 
     def auth(self):
+        """
+        Realiza autenticação na API
+        
+        Returns:
+            dict: Resposta da API com token e dados do usuário
+        """
         if self.token != "None":
             return {"msg": "Token já fornecido manualmente."}
         
@@ -85,9 +130,17 @@ class OnebraAPI(Browser):
         return self.response.json()
 
     async def reconnect(self):
+        """Reconecta em caso de perda de conexão"""
         return await self.auth()
 
     def get_last_doubles(self):
+        """
+        Obtém últimos resultados do Double
+        
+        Returns:
+            dict: Lista de resultados com cores e valores
+                 🔴 (1-7) | ⚫️ (8-14) | ⚪️ (15)
+        """
         data = {
             "limit": 12,
             "token": self.token,
@@ -116,6 +169,13 @@ class OnebraAPI(Browser):
         return False
 
     def get_last_crashs(self):
+        """
+        Obtém últimos resultados do Crash
+        
+        Returns:
+            dict: Lista de resultados com cores e valores
+                 ⬛️ (<2x) | 🟩 (>=2x)
+        """
         data = {
             "type": 2,
             "uid": self.uid,
@@ -133,14 +193,4 @@ class OnebraAPI(Browser):
             return result
 
         return False
-
-if __name__ == "__main__":
-    token = "SEU_TOKEN_ONEBRA_AQUI"
-    email = "SEU_EMAIL_ONEBRA_AQUI"
-    password = "SUA_SENHA_ONEBRA_AQUI"
-    api = OnebraAPI(email, password, token)
-    authentication = api.auth()
-    last_doubles = api.get_last_doubles()
-    print("Últimos doubles:", last_doubles)
-    last_crashs = api.get_last_crashs()
-    print("Últimos crashes:", last_crashs) 
+ 
