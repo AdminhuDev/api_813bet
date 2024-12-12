@@ -14,7 +14,7 @@ from urllib3.util.retry import Retry
 # Configurações da API
 URL_BASE = "https://www.k813bet.com"
 URL_API = "https://api.api813bet.com"
-VERSION_API = "0.0.1-professional"
+VERSION_API = "0.0.1-beta"
 
 # Configuração de retry para requisições com falha
 retry_strategy = Retry(
