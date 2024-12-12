@@ -31,10 +31,6 @@ venv/
 ENV/
 env/
 
-# Arquivos locais de teste
-api_813.py
-api_onebra.py
-
 # Logs e dados
 *.log
 *.csv
